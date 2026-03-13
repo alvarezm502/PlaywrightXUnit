@@ -2,6 +2,6 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
-  <Project Path="Automation.UiTests/Automation.UiTests.csproj" Id="74ee2ca0-21cf-493e-8d2e-7386e5725d95" />
-  <Project Path="PlaywrightxUnit/Automation.Framework.csproj" />
+  <Project Path="Automation.Framework/Automation.Framework.csproj" />
+  <Project Path="Automation.UiTests/Automation.UiTests.csproj" />
 </Solution>

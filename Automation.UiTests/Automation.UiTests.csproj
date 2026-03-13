@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PlaywrightxUnit\Automation.Framework.csproj" />
+    <ProjectReference Include="..\Automation.Framework\Automation.Framework.csproj" />
   </ItemGroup>
 
   <ItemGroup>
