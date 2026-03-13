@@ -1,0 +1,38 @@
+﻿
+# Build folders
+bin/
+obj/
+
+# visual studio 
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+#Test Results
+TestResults/
+*.trx
+
+#Playwright artifacts
+playwright-report/
+test-Results/
+trace/
+videos/
+screenshots/
+
+# Browser binaries
+ms-playwright/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+#Nuget packages
+*.nupkg
+packages/
+
+# Coverage
+Coverage/
+*.coverage
