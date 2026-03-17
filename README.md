@@ -7,21 +7,38 @@ It is designed for **parallel execution**, **isolated browser contexts**, and **
 
 ## Prerequisites
 
-Before running tests, ensure the following:
+Before running tests, ensure the following (will need terminal open):
+Run each command and me sure you have the required dependency versions. Install if not available
 
-1. **.NET 10 SDK** or later installed  
+1. **.NET 10 SDK** or later installed (checks version only) 
    ```bash
    dotnet --version
-2. Node.js (for Playwright)  
+2. Node.js (for Playwright)  v22.22.0 or latest
    ```bash
    node --version
 3. Dependencies installed  
    ```bash
    dotnet restore
-   dotnet build
-   dotnet playwright install
    ```
-
+4. Build Solution
+   ```bash
+   dotnet build
+   ```
+5. cd into Automation.UiTests
+   ```bash
+   cd Automation.UiTests
+   ```
+6. Install playwright browsers
+   ```bash 
+   pwsh bin/Debug/net10.0/playwright.ps1 install
+   ```
+## Test Execution
+1. Run tests from Test Explorer: If not open View > Test Explorer. Select a test class or a test method and click play/debu
+2. Run tests from CLI 
+   ```bash 
+   dotnet tests
+   ```
+1. 
 ## Configuration
 1. UiTets/appsettings.json contains configuration settings for the tests, such as:
 ```json
@@ -41,8 +58,3 @@ Before running tests, ensure the following:
 	- Screenshots
 	- Logs
 	- Reports
-
-Run tests from CLI
-```bash
-dotnet test
-```
