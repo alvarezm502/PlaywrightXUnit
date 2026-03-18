@@ -1,4 +1,5 @@
-﻿using Automation.UiTests.Fixtures;
+﻿using Automation.Framework.Models;
+using Automation.UiTests.Fixtures;
 using Automation.UiTests.TestData;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
@@ -29,7 +30,7 @@ namespace Automation.Framework.Core
         protected IBrowserContext Context;
         protected IPage Page;
         protected LoggerManager Logger;
-        protected string Mpw;
+        protected UserSecretsService _userSecrets;
        // protected Users Users;
         //  protected Dictionary<string, string> Users;
         protected BaseTest(TestFixture fixture)
@@ -49,6 +50,7 @@ namespace Automation.Framework.Core
             _screenshotService = services.GetRequiredService<ScreenshotService>();
             _loggerManager = services.GetRequiredService<LoggerManager>();
             _settings = services.GetRequiredService<TestSettings>();
+            _userSecrets = services.GetRequiredService<UserSecretsService>();
             Logger = services.GetRequiredService<LoggerManager>();
 
             //Create isolated browser context for this test
@@ -59,21 +61,6 @@ namespace Automation.Framework.Core
 
             //Nav to BaseUrl from settings
             await Page.GotoAsync(_settings.BaseUrl);
-             
-            //Make users and Mpw available to tests
-            //string pathToUse = await GetProjectDir();//directoryInfo.Parent?.Parent?.Parent?.FullName ?? currentDir;
-            //var usersFile = Path.Combine(pathToUse, "TestData", "Users.json");
-            //var json = File.ReadAllText(usersFile);
-            //var doc = JsonDocument.Parse(json);
-            //Users = doc.RootElement
-            //    .GetProperty("users")
-            //    .EnumerateObject()
-            //    .ToDictionary(
-            //        u => u.Name,
-            //        u => u.Value.GetProperty("username").GetString()!
-            //    );
-            Mpw = _settings.Mpw;
-
         }
 
         protected async Task RunAsync(Func<Task> test, [System.Runtime.CompilerServices.CallerMemberName] string testMethod = "")

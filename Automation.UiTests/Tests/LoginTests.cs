@@ -18,9 +18,10 @@ namespace Automation.UiTests.Tests
         {
             await RunAsync(async () =>
             {
+                var user = _userSecrets.GetUser("Admin");
                 var loginPage = new LoginPage(Page, Logger);
 
-                await loginPage.LoginAsync(Users.Admin, Mpw);
+                await loginPage.LoginAsync(user.Username, user.Password);
 
                 var message = await loginPage.GetMessageAsync();
 
