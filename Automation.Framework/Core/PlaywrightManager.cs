@@ -1,4 +1,5 @@
 ﻿using Microsoft.Playwright;
+using Automation.Framework.Models;
 
 namespace Automation.Framework.Core
 {

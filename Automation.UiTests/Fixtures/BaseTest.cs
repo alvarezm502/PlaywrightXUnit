@@ -1,5 +1,6 @@
 ﻿using Automation.UiTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
+using Automation.Framework.Models;
 using Microsoft.Playwright;
 using System.Text;
 

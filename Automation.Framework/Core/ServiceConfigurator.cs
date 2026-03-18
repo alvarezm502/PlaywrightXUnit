@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Automation.Framework.Models;
 using Serilog;
 
 namespace Automation.Framework.Core

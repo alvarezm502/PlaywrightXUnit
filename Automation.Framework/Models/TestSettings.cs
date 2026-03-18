@@ -1,4 +1,4 @@
-﻿namespace Automation.Framework.Core
+﻿namespace Automation.Framework.Models
 {
     public class TestSettings
     {
