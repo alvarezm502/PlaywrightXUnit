@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Automation.Framework.Models;
 using Serilog;
 
 namespace Automation.Framework.Core
@@ -17,7 +18,7 @@ namespace Automation.Framework.Core
     /// </summary>
     public static class ServiceConfigurator
     {
-        public static ServiceProvider Configure()
+        public static ServiceProvider Configure<T>()
         {
             ///<summary>
             /// Configures the Dependency Injection container with all necessary services.
@@ -28,6 +29,8 @@ namespace Automation.Framework.Core
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false)
+                .AddUserSecrets(typeof(T).Assembly, optional: true)
+               // .AddEnvironmentVariables() //will be for CI
                 .Build();
 
             //Injecting TestSettings object into framework services
@@ -50,6 +53,7 @@ namespace Automation.Framework.Core
             services.AddSingleton<LoggerManager>();
             services.AddSingleton<BrowserContextManager>();
             services.AddSingleton<ScreenshotService>();
+            services.AddSingleton<UserSecretsService>();
             services.AddLogging(loggingBuilder =>
             {
                 loggingBuilder.ClearProviders();

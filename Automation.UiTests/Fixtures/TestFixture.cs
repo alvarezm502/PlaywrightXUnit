@@ -23,7 +23,7 @@ namespace Automation.UiTests.Fixtures
         public async ValueTask InitializeAsync()
         {
             // Build dependency injection container
-            _serviceProvider = ServiceConfigurator.Configure();
+            _serviceProvider = ServiceConfigurator.Configure<TestFixture>();
 
             //Resolve required framework services
             _playwrightManager = _serviceProvider.GetRequiredService<PlaywrightManager>();

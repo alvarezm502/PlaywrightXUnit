@@ -1,7 +1,6 @@
 ﻿using Automation.Framework.Core;
 using Automation.UiTests.Fixtures;
 using Automation.UiTests.Pages;
-using Automation.UiTests.TestData;
 
 namespace Automation.UiTests.Tests
 {
@@ -18,8 +17,8 @@ namespace Automation.UiTests.Tests
                 Logger.LogInfo("Attempting login with empty password");
 
                 var page = new LoginPage(Page, Logger);
-
-                await page.LoginAsync(Users.Admin, "");
+                var user = _userSecrets.GetUser("Admin");
+                await page.LoginAsync(user.Username, "");
 
                 var message = await page.GetMessageAsync();
 
@@ -36,7 +35,8 @@ namespace Automation.UiTests.Tests
 
                 var page = new LoginPage(Page, Logger);
 
-                await page.LoginAsync(Users.Admin, "SuperSecretPassword!123");
+                var user = _userSecrets.GetUser("Admin");
+                await page.LoginAsync(user.Username, "SuperSecretPassword!123");
 
                 var message = await page.GetMessageAsync();
 

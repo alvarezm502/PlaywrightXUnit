@@ -1,7 +1,6 @@
 ﻿using Automation.Framework.Core;
 using Automation.UiTests.Fixtures;
 using Automation.UiTests.Pages;
-using Automation.UiTests.TestData;
 
 namespace Automation.UiTests.Tests
 {
@@ -18,9 +17,10 @@ namespace Automation.UiTests.Tests
         {
             await RunAsync(async () =>
             {
+                var user = _userSecrets.GetUser("Admin");
                 var loginPage = new LoginPage(Page, Logger);
 
-                await loginPage.LoginAsync(Users.Admin, Mpw);
+                await loginPage.LoginAsync(user.Username, user.Password);
 
                 var message = await loginPage.GetMessageAsync();
 
@@ -37,9 +37,10 @@ namespace Automation.UiTests.Tests
             await RunAsync(async () =>
             {
                 Logger.LogInfo("I wonder if this works - this is LoginTests");
+                var user = _userSecrets.GetUser("TestUser1");
                 var loginPage = new LoginPage(Page, Logger);
 
-                await loginPage.LoginAsync(Users.TestUser1, "badpassword");
+                await loginPage.LoginAsync(user.Username, user.Password);
 
                 var message = await loginPage.GetMessageAsync();
 
