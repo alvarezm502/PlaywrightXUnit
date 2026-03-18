@@ -1,7 +1,6 @@
 ﻿using Automation.Framework.Core;
 using Automation.UiTests.Fixtures;
 using Automation.UiTests.Pages;
-using Automation.UiTests.TestData;
 
 namespace Automation.UiTests.Tests
 {

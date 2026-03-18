@@ -34,9 +34,12 @@ Run each command and me sure you have the required dependency versions. Install 
    ```
 
 ## Configuration
-0. Setup User secrets
+0. Setup User secrets (This is just a sample project. All this information is found on the testing url being used. 
    ```bash
-   dotnet user-secrets init
+   dotnet user-secrets set "TestUsers:Admin:Username" "tomsmith"
+   dotnet user-secrets set "TestUsers:Admin:Password" "SuperSecretPassword!"
+   dotnet user-secrets set "TestUsers:TestUser1:Username" "TestUser1"
+   dotnet user-secrets set "TestUsers:TestUser1:Password" "badpassword"
    ```
 
 1. UiTets/appsettings.json contains configuration settings for the tests, such as:
