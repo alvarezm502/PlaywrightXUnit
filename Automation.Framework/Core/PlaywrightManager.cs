@@ -1,6 +1,4 @@
-﻿using Automation.Framework.Models;
-using Microsoft.Extensions.Options;
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
 
 namespace Automation.Framework.Core
 {

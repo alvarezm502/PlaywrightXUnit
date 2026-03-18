@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
 
 namespace Automation.Framework.Core
 {
