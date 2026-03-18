@@ -1,10 +1,7 @@
-﻿using Automation.Framework.Models;
-using Automation.UiTests.Fixtures;
-using Automation.UiTests.TestData;
+﻿using Automation.UiTests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using System.Text;
-using System.Text.Json;
 
 namespace Automation.Framework.Core
 {

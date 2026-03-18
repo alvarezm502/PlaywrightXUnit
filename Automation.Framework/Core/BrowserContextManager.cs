@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Automation.Framework.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 
 namespace Automation.Framework.Core

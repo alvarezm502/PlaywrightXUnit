@@ -32,14 +32,13 @@ Run each command and me sure you have the required dependency versions. Install 
    ```bash 
    pwsh bin/Debug/net10.0/playwright.ps1 install
    ```
-## Test Execution
-1. Run tests from Test Explorer: If not open View > Test Explorer. Select a test class or a test method and click play/debu
-2. Run tests from CLI 
-   ```bash 
-   dotnet tests
-   ```
-1. 
+
 ## Configuration
+0. Setup User secrets
+   ```bash
+   dotnet user-secrets init
+   ```
+
 1. UiTets/appsettings.json contains configuration settings for the tests, such as:
 ```json
 {
@@ -58,3 +57,10 @@ Run each command and me sure you have the required dependency versions. Install 
 	- Screenshots
 	- Logs
 	- Reports
+
+## Test Execution
+1. Run tests from Test Explorer: If not open View > Test Explorer. Select a test class or a test method and click play/debu
+2. Run tests from CLI 
+   ```bash 
+   dotnet tests
+   ```
