@@ -80,6 +80,14 @@ dotnet user-secrets set "TestUsers:TestUser1:Username" "TestUser1"
 dotnet user-secrets set "TestUsers:TestUser1:Password" "badpassword"
 ```
 
+For CI or local shell runs, the same values can be supplied with environment variables:
+```bash
+export TestUsers__Admin__Username="tomsmith"
+export TestUsers__Admin__Password="SuperSecretPassword!"
+export TestUsers__TestUser1__Username="TestUser1"
+export TestUsers__TestUser1__Password="badpassword"
+```
+
 2. Application Settings (Sample project is already configured)
 File: Automation.UiTests/appsettings.json
 ```json
@@ -109,5 +117,5 @@ Option 1: Visual Studio (Test Explorer)
 
 Option 2: Command Line 
    ```bash 
-   dotnet tests
+   dotnet test
    ```
