@@ -36,7 +36,7 @@ namespace Automation.UiTests.Tests
                 var page = new LoginPage(Page, Logger);
 
                 var user = _userSecrets.GetUser("Admin");
-                await page.LoginAsync(user.Username, user.Password);
+                await page.LoginAsync(user.Username, "SuperSecretPassword!123");
 
                 var message = await page.GetMessageAsync();
 

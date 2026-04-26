@@ -44,7 +44,8 @@ namespace Automation.UiTests.Tests
 
                 var message = await loginPage.GetMessageAsync();
 
-                Assert.Contains("Your username is invalid!", message);
+                // intentionally wrong assertion to trigger screenshot/log/html
+                Assert.Contains("ThisWillFail", message);
             });
         }
     }
