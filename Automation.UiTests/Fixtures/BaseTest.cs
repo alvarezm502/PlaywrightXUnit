@@ -19,16 +19,16 @@ namespace Automation.Framework.Core
     {
         private readonly TestFixture _fixture;
         //private static readonly Dictionary<string, string> _users;
-        private ScreenshotService _screenshotService;
-        private LoggerManager _loggerManager;
-        private TestSettings _settings;
-        private Exception _exception;
-        private string _testName;
+        private ScreenshotService _screenshotService = null!;
+        private LoggerManager _loggerManager = null!;
+        private TestSettings _settings = null!;
+        private Exception? _exception;
+        private string _testName = string.Empty;
 
-        protected IBrowserContext Context;
-        protected IPage Page;
-        protected LoggerManager Logger;
-        protected UserSecretsService _userSecrets;
+        protected IBrowserContext Context = null!;
+        protected IPage Page = null!;
+        protected LoggerManager Logger = null!;
+        protected UserSecretsService _userSecrets = null!;
        // protected Users Users;
         //  protected Dictionary<string, string> Users;
         protected BaseTest(TestFixture fixture)
@@ -105,6 +105,7 @@ namespace Automation.Framework.Core
 
                 //Creating artifacts if test failed
                 await _screenshotService.CaptureAsync(Page, _testName);
+
                 _loggerManager.WriteLogIfFailed(_testName, _exception);
                 var html = new StringBuilder();
                 html.AppendLine("<html><body>");

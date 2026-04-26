@@ -18,8 +18,8 @@ namespace Automation.Framework.Core
     /// </summary>
     public class PlaywrightManager : IAsyncDisposable
     {
-        private IPlaywright _playwright;
-        private IBrowser _browser;
+        private IPlaywright? _playwright;
+        private IBrowser? _browser;
         private readonly TestSettings _settings;
         
         public PlaywrightManager(TestSettings settings)
@@ -42,10 +42,10 @@ namespace Automation.Framework.Core
 
             await InitializeAsync();
 
-            return _browser;
+            return _browser ?? throw new InvalidOperationException("Browser failed to initialize.");
         }
 
-        public IBrowser Browser => _browser;
+        public IBrowser Browser => _browser ?? throw new InvalidOperationException("Browser has not been initialized.");
         public async Task InitializeAsync()
         {
             /// <summary>
@@ -75,8 +75,10 @@ namespace Automation.Framework.Core
             ///Properly dispose browser and Playwright resources.
             /// </summary>
 
-            await _browser.CloseAsync();
-            _playwright.Dispose();
+            if (_browser != null)
+                await _browser.CloseAsync();
+
+            _playwright?.Dispose();
         }
     }
 }

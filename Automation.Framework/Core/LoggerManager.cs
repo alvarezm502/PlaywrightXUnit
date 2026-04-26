@@ -14,7 +14,7 @@ namespace Automation.Framework.Core
     public class LoggerManager
     {
         private readonly Dictionary<string, List<string>> _logs = new();
-        private ILogger _currentLogger;
+        private ILogger? _currentLogger;
 
         public ILogger CreateTestLogger(string testName)
         {
