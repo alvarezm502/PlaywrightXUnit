@@ -30,13 +30,14 @@ namespace Automation.Framework.Core
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false)
                 .AddUserSecrets(typeof(T).Assembly, optional: true)
-               // .AddEnvironmentVariables() //will be for CI
+                .AddEnvironmentVariables()
                 .Build();
 
             //Injecting TestSettings object into framework services
             var settings = configuration
                 .GetSection("TestSettings")
-                .Get<TestSettings>();
+                .Get<TestSettings>()
+                ?? throw new InvalidOperationException("Missing or invalid TestSettings configuration.");
 
             //Configure logging (Serilog)
             Log.Logger = new LoggerConfiguration()

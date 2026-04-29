@@ -14,11 +14,11 @@ namespace Automation.UiTests.Fixtures
     /// </summary>
     public class TestFixture : IAsyncLifetime
     {
-        private ServiceProvider _serviceProvider;
-        private PlaywrightManager _playwrightManager;
+        private ServiceProvider? _serviceProvider;
+        private PlaywrightManager? _playwrightManager;
 
-        public IServiceProvider ServiceProvider => _serviceProvider;
-        public IBrowser Browser => _playwrightManager.Browser;
+        public IServiceProvider ServiceProvider => _serviceProvider ?? throw new InvalidOperationException("Service provider has not been initialized.");
+        public IBrowser Browser => _playwrightManager?.Browser ?? throw new InvalidOperationException("Browser manager has not been initialized.");
 
         public async ValueTask InitializeAsync()
         {
@@ -38,11 +38,9 @@ namespace Automation.UiTests.Fixtures
             ///Called once when the fixture is disposed (end of collection).
             ///Properly dispose Browser and DI container
             /// </summary>
-            if (_playwrightManager != null)
-                await _playwrightManager.DisposeAsync();
-
             //Dispose dependency injection container
-            _serviceProvider?.Dispose();
+            if (_serviceProvider != null)
+                await _serviceProvider.DisposeAsync();
         }
     }
 }
