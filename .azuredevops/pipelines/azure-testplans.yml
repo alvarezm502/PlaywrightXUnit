@@ -1,0 +1,197 @@
+# Azure Test Plans entry pipeline.
+# Use this when launching automated tests from Azure DevOps Test Plans / Test Case view.
+#
+# Recommended Azure Test Case automation mapping:
+#   Automation status: Automated
+#   Automated test type: Unit Test
+#   Automated test storage: Automation.UiTests.dll
+#   Automated test name: Fully-qualified xUnit method name
+#     Example: Automation.UiTests.Tests.LoginTests.Login001_WithValidCredentials_ShouldSucceed
+#
+# For a 1:1 Test Case relationship, keep each Azure Test Case mapped to exactly one xUnit [Fact].
+# If you later add [Trait("TestCaseId", "ADO-12345")] to tests, you can also use the CI
+# pipeline's testFilter parameter with: TestCaseId=ADO-12345.
+
+trigger: none
+pr: none
+
+parameters:
+  - name: selectorMode
+    displayName: 'How Azure DevOps should select tests'
+    type: string
+    default: testRun
+    values:
+      - testRun      # Best for "run/re-run this selected/failed test" from Test Plans/Test Case context.
+      - testPlan     # Runs automated tests associated to a specific plan/suite/configuration.
+      - testAssembly # Fallback/manual mode; use testFilterCriteria to narrow to one method/test case.
+
+  - name: azureTestPlanId
+    displayName: 'Azure Test Plan ID - supplied by Azure Test Plans for selectorMode=testPlan'
+    type: string
+    default: '$(test.PlanId)'
+  - name: azureTestSuiteId
+    displayName: 'Azure Test Suite ID - supplied by Azure Test Plans for selectorMode=testPlan'
+    type: string
+    default: '$(test.SuiteId)'
+  - name: azureTestConfigurationId
+    displayName: 'Azure Test Configuration ID - supplied by Azure Test Plans for selectorMode=testPlan'
+    type: string
+    default: '$(test.ConfigurationId)'
+  - name: azureTestRunId
+    displayName: 'Azure Test Run ID - supplied by Azure Test Plans when running selected tests'
+    type: string
+    default: '$(test.RunId)'
+  - name: testFilterCriteria
+    displayName: 'Optional VSTest filter for selectorMode=testAssembly. Example FullyQualifiedName~Login001'
+    type: string
+    default: ''
+  - name: browser
+    displayName: 'Playwright browser'
+    type: string
+    default: chromium
+    values:
+      - chromium
+      - firefox
+      - webkit
+  - name: buildConfiguration
+    displayName: 'Build configuration'
+    type: string
+    default: Release
+    values:
+      - Release
+      - Debug
+
+variables:
+  dotnetSdkVersion: '10.0.x'
+  testProject: 'Automation.UiTests/Automation.UiTests.csproj'
+  testAssemblyPattern: |
+    **\Automation.UiTests.dll
+    !**\*TestAdapter.dll
+    !**\obj\**
+  testResultsDirectory: '$(Agent.TempDirectory)\test-results'
+
+stages:
+  - stage: azure_testplans_run
+    displayName: 'Azure Test Plans selected automated tests'
+    jobs:
+      - job: run_selected_tests
+        displayName: 'Run selected xUnit tests from Azure Test Plans'
+        timeoutInMinutes: 60
+        pool:
+          # VSTest/Test Plans selection is most reliable on Microsoft-hosted Windows agents.
+          vmImage: windows-latest
+
+        steps:
+          - checkout: self
+            clean: true
+
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK $(dotnetSdkVersion)'
+            inputs:
+              packageType: sdk
+              version: '$(dotnetSdkVersion)'
+              includePreviewVersions: true
+
+          - task: NuGetAuthenticate@1
+            displayName: 'Authenticate NuGet feeds'
+            # Safe even when no private feed exists; useful placeholder if packages move private later.
+
+          - pwsh: dotnet restore $(testProject)
+            displayName: 'Restore NuGet packages'
+
+          - pwsh: dotnet build $(testProject) --configuration ${{ parameters.buildConfiguration }} --no-restore
+            displayName: 'Build test project'
+
+          - pwsh: |
+              $playwrightScript = "Automation.UiTests/bin/${{ parameters.buildConfiguration }}/net10.0/playwright.ps1"
+              if (-not (Test-Path $playwrightScript)) {
+                Write-Host "Expected Playwright install script was not found: $playwrightScript"
+                Get-ChildItem -Path Automation.UiTests/bin -Recurse -Filter playwright.ps1 | Select-Object -ExpandProperty FullName
+                exit 1
+              }
+
+              & $playwrightScript install ${{ parameters.browser }}
+            displayName: 'Install Playwright browser'
+
+          - task: VisualStudioTestPlatformInstaller@1
+            displayName: 'Install latest VSTest platform'
+            inputs:
+              packageFeedSelector: nugetOrg
+              versionSelector: latestStable
+
+          - task: VSTest@3
+            displayName: 'Run tests from Azure Test Run'
+            condition: eq('${{ parameters.selectorMode }}', 'testRun')
+            inputs:
+              testSelector: testRun
+              tcmTestRun: '${{ parameters.azureTestRunId }}'
+              testAssemblyVer2: '$(testAssemblyPattern)'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+              vsTestVersion: toolsInstaller
+              runInParallel: false
+              diagnosticsEnabled: true
+              publishRunAttachments: true
+              rerunFailedTests: false
+            env:
+              TestUsers__Admin__Username: $(TEST_ADMIN_USERNAME)
+              TestUsers__Admin__Password: $(TEST_ADMIN_PASSWORD)
+              TestUsers__TestUser1__Username: $(TEST_TESTUSER1_USERNAME)
+              TestUsers__TestUser1__Password: $(TEST_TESTUSER1_PASSWORD)
+              TestSettings__BaseUrl: $(TEST_BASE_URL)
+              TestSettings__Headless: 'true'
+              TestSettings__DriverType: ${{ parameters.browser }}
+
+          - task: VSTest@3
+            displayName: 'Run tests from Azure Test Plan/Suite'
+            condition: eq('${{ parameters.selectorMode }}', 'testPlan')
+            inputs:
+              testSelector: testPlan
+              testPlan: '${{ parameters.azureTestPlanId }}'
+              testSuite: '${{ parameters.azureTestSuiteId }}'
+              testConfiguration: '${{ parameters.azureTestConfigurationId }}'
+              testAssemblyVer2: '$(testAssemblyPattern)'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+              vsTestVersion: toolsInstaller
+              runInParallel: false
+              diagnosticsEnabled: true
+              publishRunAttachments: true
+              rerunFailedTests: false
+            env:
+              TestUsers__Admin__Username: $(TEST_ADMIN_USERNAME)
+              TestUsers__Admin__Password: $(TEST_ADMIN_PASSWORD)
+              TestUsers__TestUser1__Username: $(TEST_TESTUSER1_USERNAME)
+              TestUsers__TestUser1__Password: $(TEST_TESTUSER1_PASSWORD)
+              TestSettings__BaseUrl: $(TEST_BASE_URL)
+              TestSettings__Headless: 'true'
+              TestSettings__DriverType: ${{ parameters.browser }}
+
+          - task: VSTest@3
+            displayName: 'Run filtered/manual assembly tests'
+            condition: eq('${{ parameters.selectorMode }}', 'testAssembly')
+            inputs:
+              testSelector: testAssemblies
+              testAssemblyVer2: '$(testAssemblyPattern)'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+              vsTestVersion: toolsInstaller
+              testFiltercriteria: '${{ parameters.testFilterCriteria }}'
+              runInParallel: false
+              diagnosticsEnabled: true
+              publishRunAttachments: true
+              rerunFailedTests: false
+            env:
+              TestUsers__Admin__Username: $(TEST_ADMIN_USERNAME)
+              TestUsers__Admin__Password: $(TEST_ADMIN_PASSWORD)
+              TestUsers__TestUser1__Username: $(TEST_TESTUSER1_USERNAME)
+              TestUsers__TestUser1__Password: $(TEST_TESTUSER1_PASSWORD)
+              TestSettings__BaseUrl: $(TEST_BASE_URL)
+              TestSettings__Headless: 'true'
+              TestSettings__DriverType: ${{ parameters.browser }}
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Playwright failure artifacts'
+            condition: always()
+            inputs:
+              targetPath: 'Automation.UiTests\TestResults'
+              artifactName: 'playwright-failure-artifacts'
+              publishLocation: pipeline
+            continueOnError: true

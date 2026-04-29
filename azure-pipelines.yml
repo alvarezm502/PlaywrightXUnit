@@ -1,0 +1,139 @@
+# CI pipeline for the Playwright + xUnit automation suite.
+# Runs the full suite by default, or a filtered subset when testFilter is provided.
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+      - chore/*
+      - feature/*
+
+pr:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+
+parameters:
+  - name: testFilter
+    displayName: 'Optional dotnet test filter. Example: FullyQualifiedName~Login001 or TestCaseId=ADO-12345'
+    type: string
+    default: ''
+  - name: browser
+    displayName: 'Playwright browser to install/run'
+    type: string
+    default: chromium
+    values:
+      - chromium
+      - firefox
+      - webkit
+  - name: buildConfiguration
+    displayName: 'Build configuration'
+    type: string
+    default: Release
+    values:
+      - Release
+      - Debug
+
+variables:
+  dotnetSdkVersion: '10.0.x'
+  testProject: 'Automation.UiTests/Automation.UiTests.csproj'
+  testResultsDirectory: '$(Agent.TempDirectory)/test-results'
+
+stages:
+  - stage: build_and_test
+    displayName: 'Build and run automation tests'
+    jobs:
+      - job: playwright_xunit_tests
+        displayName: 'Playwright xUnit tests'
+        timeoutInMinutes: 60
+        pool:
+          vmImage: ubuntu-latest
+
+        steps:
+          - checkout: self
+            clean: true
+
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK $(dotnetSdkVersion)'
+            inputs:
+              packageType: sdk
+              version: '$(dotnetSdkVersion)'
+              includePreviewVersions: true
+
+          - task: Cache@2
+            displayName: 'Cache NuGet packages'
+            inputs:
+              key: 'nuget | "$(Agent.OS)" | **/*.csproj'
+              restoreKeys: |
+                nuget | "$(Agent.OS)"
+              path: '$(HOME)/.nuget/packages'
+
+          - script: dotnet restore $(testProject)
+            displayName: 'Restore NuGet packages'
+
+          - script: dotnet build $(testProject) --configuration ${{ parameters.buildConfiguration }} --no-restore
+            displayName: 'Build test project'
+
+          - pwsh: |
+              $playwrightScript = "Automation.UiTests/bin/${{ parameters.buildConfiguration }}/net10.0/playwright.ps1"
+              if (-not (Test-Path $playwrightScript)) {
+                Write-Host "Expected Playwright install script was not found: $playwrightScript"
+                Get-ChildItem -Path Automation.UiTests/bin -Recurse -Filter playwright.ps1 | Select-Object -ExpandProperty FullName
+                exit 1
+              }
+
+              & $playwrightScript install --with-deps ${{ parameters.browser }}
+            displayName: 'Install Playwright browser dependencies'
+
+          - pwsh: |
+              New-Item -ItemType Directory -Force -Path '$(testResultsDirectory)' | Out-Null
+
+              $arguments = @(
+                'test', '$(testProject)',
+                '--configuration', '${{ parameters.buildConfiguration }}',
+                '--no-build',
+                '--logger', 'trx;LogFileName=playwright-xunit.trx',
+                '--results-directory', '$(testResultsDirectory)'
+              )
+
+              if ('${{ parameters.testFilter }}' -ne '') {
+                $arguments += @('--filter', '${{ parameters.testFilter }}')
+              }
+
+              Write-Host "Running: dotnet $($arguments -join ' ')"
+              dotnet @arguments
+            displayName: 'Run xUnit tests'
+            env:
+              # TODO: Configure these as secret pipeline variables or variable-group values.
+              # Double underscore maps to .NET configuration sections, e.g. TestUsers:Admin:Username.
+              TestUsers__Admin__Username: $(TEST_ADMIN_USERNAME)
+              TestUsers__Admin__Password: $(TEST_ADMIN_PASSWORD)
+              TestUsers__TestUser1__Username: $(TEST_TESTUSER1_USERNAME)
+              TestUsers__TestUser1__Password: $(TEST_TESTUSER1_PASSWORD)
+              TestSettings__BaseUrl: $(TEST_BASE_URL)
+              TestSettings__Headless: 'true'
+              TestSettings__DriverType: ${{ parameters.browser }}
+
+          - task: PublishTestResults@2
+            displayName: 'Publish TRX test results'
+            condition: always()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(testResultsDirectory)'
+              testRunTitle: 'Playwright xUnit - ${{ parameters.browser }}'
+              failTaskOnFailedTests: true
+              publishRunAttachments: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Playwright failure artifacts'
+            condition: always()
+            inputs:
+              targetPath: 'Automation.UiTests/TestResults'
+              artifactName: 'playwright-failure-artifacts'
+              publishLocation: pipeline
+            continueOnError: true
