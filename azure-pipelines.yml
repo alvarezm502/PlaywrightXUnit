@@ -1,0 +1,121 @@
+# Azure DevOps pipeline for Playwright + xUnit automated tests.
+#
+# This pipeline supports two Azure Test Plans flows:
+# 1. Scheduled/manual all-test execution from a Test Plan/Suite/Configuration.
+# 2. Failed-test reruns launched from Azure Test Plans. When Azure Test Plans starts
+#    the run it supplies $(test.RunId); the VSTest task then selects only the tests
+#    from that Test Run (for example, the failed tests selected in Test Plans) and
+#    publishes the result back to the same Test Plan/Test Suite/Test Case history.
+#
+# Before enabling the schedule, create pipeline variables (or variable group values):
+# - ADO_TEST_PLAN_ID: Azure Test Plan id
+# - ADO_TEST_SUITE_ID: Azure Test Suite id
+# - ADO_TEST_CONFIGURATION_ID: Azure Test Configuration id
+#
+# The tests also require these variables/secrets:
+# - TestUsers__Admin__Username
+# - TestUsers__Admin__Password
+# - TestUsers__TestUser1__Username
+# - TestUsers__TestUser1__Password
+
+trigger:
+  branches:
+    include:
+      - master
+
+pr:
+  branches:
+    include:
+      - master
+
+schedules:
+  # Runs all associated automated tests from the configured Azure Test Plan nightly.
+  # Adjust the cron/time zone in the Azure DevOps UI if you need a different cadence.
+  - cron: '0 7 * * *'
+    displayName: Nightly Azure Test Plan run
+    branches:
+      include:
+        - master
+    always: true
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  buildConfiguration: Release
+  testProject: Automation.UiTests/Automation.UiTests.csproj
+  testAssemblySearchFolder: '$(System.DefaultWorkingDirectory)'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  DOTNET_NOLOGO: 'true'
+
+steps:
+  - checkout: self
+    clean: true
+
+  - task: UseDotNet@2
+    displayName: Use .NET SDK 10.x
+    inputs:
+      packageType: sdk
+      version: 10.0.x
+
+  - script: dotnet restore PlaywrightxUnit.slnx
+    displayName: Restore NuGet packages
+
+  - script: dotnet build PlaywrightxUnit.slnx --configuration $(buildConfiguration) --no-restore
+    displayName: Build solution
+
+  - pwsh: |
+      New-Item -ItemType Directory -Force -Path "$(Agent.TempDirectory)\TestResults" | Out-Null
+
+      $playwright = Join-Path "$(System.DefaultWorkingDirectory)" "Automation.UiTests/bin/$(buildConfiguration)/net10.0/playwright.ps1"
+      if (-not (Test-Path $playwright)) {
+        throw "Playwright install script not found at $playwright. Confirm the test project built successfully."
+      }
+      & $playwright install chromium
+    displayName: Install Playwright Chromium browser
+
+  - task: VSTest@3
+    displayName: Run selected failed tests from Azure Test Plans test run
+    condition: and(succeeded(), ne(variables['test.RunId'], ''))
+    inputs:
+      testSelector: testRun
+      tcmTestRun: '$(test.RunId)'
+      searchFolder: '$(testAssemblySearchFolder)'
+      resultsFolder: '$(Agent.TempDirectory)\TestResults'
+      uiTests: true
+      runInParallel: false
+      rerunFailedTests: false
+      diagnosticsEnabled: true
+    env:
+      TestUsers__Admin__Username: $(TestUsers__Admin__Username)
+      TestUsers__Admin__Password: $(TestUsers__Admin__Password)
+      TestUsers__TestUser1__Username: $(TestUsers__TestUser1__Username)
+      TestUsers__TestUser1__Password: $(TestUsers__TestUser1__Password)
+
+  - task: VSTest@3
+    displayName: Run all automated tests associated to Azure Test Plan
+    condition: and(succeeded(), eq(variables['test.RunId'], ''))
+    inputs:
+      testSelector: testPlan
+      testPlan: '$(ADO_TEST_PLAN_ID)'
+      testSuite: '$(ADO_TEST_SUITE_ID)'
+      testConfiguration: '$(ADO_TEST_CONFIGURATION_ID)'
+      searchFolder: '$(testAssemblySearchFolder)'
+      resultsFolder: '$(Agent.TempDirectory)\TestResults'
+      uiTests: true
+      runInParallel: false
+      rerunFailedTests: false
+      diagnosticsEnabled: true
+    env:
+      TestUsers__Admin__Username: $(TestUsers__Admin__Username)
+      TestUsers__Admin__Password: $(TestUsers__Admin__Password)
+      TestUsers__TestUser1__Username: $(TestUsers__TestUser1__Username)
+      TestUsers__TestUser1__Password: $(TestUsers__TestUser1__Password)
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish Playwright/test artifacts
+    condition: always()
+    inputs:
+      targetPath: '$(Agent.TempDirectory)\TestResults'
+      artifact: test-results
+      publishLocation: pipeline
